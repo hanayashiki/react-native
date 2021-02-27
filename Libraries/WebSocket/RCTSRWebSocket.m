@@ -462,7 +462,7 @@ RCT_NOT_IMPLEMENTED(- (instancetype)init)
 
   CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Origin"), (__bridge CFStringRef)_url.RCTSR_origin);
 
-  if (_requestedProtocols && _requestedProtocols.count > 0) {
+  if (_requestedProtocols) {
     CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Sec-WebSocket-Protocol"), (__bridge CFStringRef)[_requestedProtocols componentsJoinedByString:@", "]);
   }
 
@@ -495,6 +495,14 @@ RCT_NOT_IMPLEMENTED(- (instancetype)init)
   CFWriteStreamRef writeStream = NULL;
 
   CFStreamCreatePairWithSocketToHost(NULL, (__bridge CFStringRef)host, port, &readStream, &writeStream);
+    
+  CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
+  
+  if (CFDictionaryContainsKey(proxySettings, kCFStreamPropertySOCKSProxyHost)) {
+    NSLog(@"SocketRocket: kCFStreamPropertySOCKSProxyHost found in proxy settings, using it as our proxy. ");
+    CFReadStreamSetProperty((CFReadStreamRef)readStream, kCFStreamPropertySOCKSProxy, (CFTypeRef)proxySettings);
+    CFReadStreamSetProperty((CFReadStreamRef)writeStream, kCFStreamPropertySOCKSProxy, (CFTypeRef)proxySettings);
+  }
 
   _outputStream = CFBridgingRelease(writeStream);
   _inputStream = CFBridgingRelease(readStream);
